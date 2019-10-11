@@ -127,7 +127,27 @@ class BRIEF(DescriptorExtractor):
         self.descriptors = None
         self.mask = None
 
-    def extract(self, image, keypoints):
+    @staticmethod
+    def get_normal_samples(patch_size, random, desc_size):
+        samples = (patch_size / 5.0) * random.randn(desc_size * 8)
+        samples = np.array(samples, dtype=np.int32)
+        samples = samples[(samples < (patch_size // 2))
+                          & (samples > - (patch_size - 2) // 2)]
+
+        pos1 = samples[:desc_size * 2].reshape(desc_size, 2)
+        pos2 = samples[desc_size * 2:desc_size * 4].reshape(desc_size, 2)
+        return pos1, pos2
+
+    @staticmethod
+    def get_uniform_samples(patch_size, random, desc_size):
+        samples = random.randint(-(patch_size - 2) // 2,
+                                 (patch_size // 2) + 1,
+                                 (desc_size * 2, 2))
+        samples = np.array(samples, dtype=np.int32)
+        pos1, pos2 = np.split(samples, 2)
+        return pos1, pos2
+
+    def extract(self, image, keypoints, pos=None):
         """Extract BRIEF binary descriptors for given keypoints in image.
 
         Parameters
@@ -152,19 +172,9 @@ class BRIEF(DescriptorExtractor):
         desc_size = self.descriptor_size
         patch_size = self.patch_size
         if self.mode == 'normal':
-            samples = (patch_size / 5.0) * random.randn(desc_size * 8)
-            samples = np.array(samples, dtype=np.int32)
-            samples = samples[(samples < (patch_size // 2))
-                              & (samples > - (patch_size - 2) // 2)]
-
-            pos1 = samples[:desc_size * 2].reshape(desc_size, 2)
-            pos2 = samples[desc_size * 2:desc_size * 4].reshape(desc_size, 2)
+            pos1, pos2 = BRIEF.get_normal_samples(patch_size, random, desc_size)
         elif self.mode == 'uniform':
-            samples = random.randint(-(patch_size - 2) // 2,
-                                     (patch_size // 2) + 1,
-                                     (desc_size * 2, 2))
-            samples = np.array(samples, dtype=np.int32)
-            pos1, pos2 = np.split(samples, 2)
+            pos1, pos2 = BRIEF.get_uniform_samples(patch_size, random, desc_size)
         elif self.mode == 'custom':
             if not pos:
                 raise ValueError("`mode` is 'custom' but no positions were provided!")
