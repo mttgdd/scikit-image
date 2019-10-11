@@ -115,8 +115,8 @@ class BRIEF(DescriptorExtractor):
                  mode='normal', sigma=1, sample_seed=1):
 
         mode = mode.lower()
-        if mode not in ('normal', 'uniform'):
-            raise ValueError("`mode` must be 'normal' or 'uniform'.")
+        if mode not in ('normal', 'uniform', 'custom'):
+            raise ValueError("`mode` must be 'normal', 'uniform', or 'custom'.")
 
         self.descriptor_size = descriptor_size
         self.patch_size = patch_size
@@ -165,6 +165,10 @@ class BRIEF(DescriptorExtractor):
                                      (desc_size * 2, 2))
             samples = np.array(samples, dtype=np.int32)
             pos1, pos2 = np.split(samples, 2)
+        elif self.mode == 'custom':
+            if not pos:
+                raise ValueError("`mode` is 'custom' but no positions were provided!")
+            pos1, pos2 = pos
 
         pos1 = np.ascontiguousarray(pos1)
         pos2 = np.ascontiguousarray(pos2)
